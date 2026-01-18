@@ -124,16 +124,13 @@ def hra():
     hladoveni()
     if beta['nešťastnost'] <0:
         beta['nešťastnost'] = 0
-    zprava.content = f"""Právě sis hrál s Adolfem a je šťastný. <br>Energie({beta['energie']}) <br>Kvalita vody:({beta['voda']})<br>Hlad({beta['hlad']})"""
-    
+    zprava.content = f"""Právě sis hrál s Adolfem a je šťastný. <br>Energie({beta['energie']}) <br>Kvalita vody:({beta['voda']})<br>Hlad({beta['hlad']})""" 
     obrazek.source = os.path.join(BASE_DIR, "fish_3.png")
     kontroluj_status()
 def spánek():
     global obrazek
     beta['energie'] = 100
-    
     zprava.content = f"Adolf se vyspal. \nEnergie({beta['energie']})"
-    
     zprava.content = f"Adolf se vyspal. \nEnergie({beta['energie']})"
     obrazek.source = os.path.join(BASE_DIR, "fish_1.png")
 
@@ -143,8 +140,6 @@ def nakrmit():
         beta['životy'] -=20
         beta['hlad'] -= 10
         zprava.content = "Adolf je přežraný!"
-       
-        
     else:
         beta["hlad"] -= 10
         if beta["životy"] < 100:
@@ -171,63 +166,46 @@ def voda():
     
 def kontroluj_status():
     if not beta['žije']:
-        zprava.content = "Resetuji hru, protože Adolf umřel"
-        obrazek.source = os.path.join(BASE_DIR, "fish_5.png")
-        
-        ui.timer(10.0, reset)
-        return
-
-    
+        return 
     if beta["životy"] <= 0:
-        zprava.content = "Zhebl"
         beta["žije"] = False
+        zprava.content = "Adolf zemřel..."
+        obrazek.source = os.path.join(BASE_DIR, "fish_5.png")
+        ui.timer(5.0, reset, once=True)
         return
-        
-       
-        
-        
-        
     if beta["věk"] > 5:
         beta["žije"] = False
-        
-        zprava.content = "Adolf umřel..... D:"
-        obrazek.source = os.path.join(BASE_DIR, "fish_5")
-        print("umrel")
+        zprava.content = "Adolf umřel stářím..."
+        obrazek.source = os.path.join(BASE_DIR, "fish_5.png")
+        ui.timer(5.0, reset, once=True)
         return
-        
-        
+
     if beta['nešťastnost'] > 100:
         beta['životy'] -= 1
-        ui.timer(10.0, kontroluj_status)
-        zprava.content = f"Adolf je smutný..."
+        zprava.content = "Adolf je smutný..."
+        ui.timer(20.0,kontroluj_status)
+    
     if beta['energie'] < -50:
-        beta['životy'] -=50
+        beta['životy'] -= 50
         ui.timer(25.0,kontroluj_status)
     
 
 def hladoveni():
     beta["hlad"] += 10
-    
     if beta["hlad"] >= 150:
-        beta["životy"] -=20
-        
+        beta["životy"] -=20     
         zprava.content= f"Adolf má hlad!!! <br>Odebral jsem 20 životů({beta['životy']})"
         obrazek.source = os.path.join(BASE_DIR, "fish_4.png")
         kontroluj_status()
     if beta["hlad"] >100:
-        
-
-        
         zprava.content = f"Adolf má hlad! - ({beta['hlad']})"
     else:
         zprava.content = f"Adolf tráví své jídlo..."
 def zhorseni_vody():
     global pozadi
-    
     beta['voda'] -= 15
     if beta["voda"] <= -150:
         beta["životy"] -=20
-        
         zprava.content= f"Adolf má špatnou vodu!!! <br>Odebral jsem 20 životů({beta['životy']})"
         obrazek.source = os.path.join(BASE_DIR, "fish_4.png")
         pozadi.style("background-color: green")
