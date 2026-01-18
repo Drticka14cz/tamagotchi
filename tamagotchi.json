@@ -1,13 +1,15 @@
 {
-    "jméno": "Adolf",
-    "hlad": 50,
-    "žízeň": 0,
-    "barva": "bílá",
-    "životy": 100,
-    "čisota": 100,
-    "energie": 90,
-    "žije": true,
-    "věk": 0,
-    "nešťastnost": false,
-    "nemoc": false
+        "jméno": "Adolf",
+        "hlad": 50,
+        "žízeň":0,
+        "barva": "bílá",
+        "životy":100,
+        "čisota":100,
+        "energie":90,
+        "žije": true,
+        "věk":0,
+        "nešťastnost": false,
+        "nemoc":false
+
+
 }

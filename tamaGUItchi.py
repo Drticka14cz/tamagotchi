@@ -10,75 +10,106 @@ from PIL import Image
 
 zprava = None
 obrazek = None
-spritesheet = Image.open("cat.png")
+BASE_DIR = os.path.dirname(__file__) 
+spritesheet = Image.open(os.path.join(BASE_DIR, "fish.png"))
+
+beta = {}
 
 
 def load_data():
     global beta
     if os.path.isfile("tamagotchi.json"):
-        with open("tamagotchi.json", "r", encoding="utf-8") as f:
-            beta = json.load(f)
+        if os.path.getsize("tamagotchi.json") == 0: 
+            print("Soubor je prázdný, vytvářím nový...") 
+            return create_default()
+        else:
+            with open("tamagotchi.json", "r", encoding="utf-8") as f:
+                beta = json.load(f)
+                return beta
     else:
         print("Chyba při načítání souboru")
         beta = {
             "jméno": "Adolf",
             "hlad": 50,
-            "žízeň":0,
+            "voda":100,
             "barva": "bílá",
             "životy":100,
             "čisota":100,
             "energie":90,
             "žije": True,
             "věk":0,
-            "nešťastnost": False,
+            "nešťastnost": 0,
             "nemoc":False,
+    
 
 
 }
+        create_default()
         save_data()
-    # print("a")
+        return beta
+ 
     
 
-    
+def create_default():
+    global beta
+    beta = {
+        "jméno": "Adolf",
+        "hlad": 50,
+        "voda": 100,
+        "barva": "bílá",
+        "životy": 100,
+        "čisota": 100,
+        "energie": 90,
+        "žije": True,
+        "věk": 0,
+        "nešťastnost": 0,
+        "nemoc": False,
+    }
+    save_data()
+    return beta
+
 
 def save_data():
 
+    
     global beta
     with open("tamagotchi.json", "w", encoding="utf-8") as f:
-        f = json.dump(beta, f, ensure_ascii=False, indent = 4)
+        json.dump(beta, f, ensure_ascii=False, indent=4)
+
 
 def reset():
     global beta
     beta = {
         "jméno": "Adolf",
         "hlad": 50,
-        "žízeň":0,
+        "voda":100,
         "barva": "bílá",
         "životy":100,
         "čisota":100,
         "energie":90,
         "žije": True,
         "věk":0,
-        "nešťastnost": False,
+        "nešťastnost": 0,
         "nemoc":False,
 
 
 }
     save_data()
     zprava.content = "Reset dokončen"
+    obrazek.source = os.path.join(BASE_DIR, "fish_0.png")
 
 def status():
     # for i in beta:
     #     print(f"{i} : {beta[i]}")
     print(f"""
 Hlad je {beta['hlad']}
-Žízeň je {beta['žízeň']}
+Kvalita vody je {beta['voda']}
 Energie je {beta['energie']}
 
 """)#dopsat podmínku
     zprava.content = f"""
 Hlad je {beta['hlad']}<br>
-Žízeň je {beta['žízeň']}<br>
+Kvalita vody je {beta['voda']}<br>
 Energie je {beta['energie']}<br>
 Životy....? 
 
@@ -86,89 +117,152 @@ Energie je {beta['energie']}<br>
     
 
 def hra():
-    beta["nešťastnost"] = False
-    beta["energie"] -= 20
-    beta["žízeň"] += 20
-    beta["hlad"] += 20
-    zprava.content = f"""Právě sis hrál s Adolfem a je šťastný. <br>Energie({beta['energie']}) <br>Žízeň({beta['žízeň']})<br>Hlad({beta['hlad']})"""
-    print(f"Právě sis hrál s Adolfem a je šťastný. \nEnergie({beta['energie']})\nŽízeň({beta['žízeň']})\nHlad({beta['hlad']})")
-
+    global obrazek
+    beta['nešťastnost'] -= 50
+    beta['energie'] -= 20
+    zhorseni_vody()
+    hladoveni()
+    if beta['nešťastnost'] <0:
+        beta['nešťastnost'] = 0
+    zprava.content = f"""Právě sis hrál s Adolfem a je šťastný. <br>Energie({beta['energie']}) <br>Kvalita vody:({beta['voda']})<br>Hlad({beta['hlad']})"""
+    
+    obrazek.source = os.path.join(BASE_DIR, "fish_3.png")
+    kontroluj_status()
 def spánek():
-    beta["energie"] = 100
-    print(f"Adolf se vyspal. \nEnergie({beta['energie']})")
+    global obrazek
+    beta['energie'] = 100
+    
     zprava.content = f"Adolf se vyspal. \nEnergie({beta['energie']})"
-    obrazek.source = vystrihni_obrazek(0,45)
+    
     zprava.content = f"Adolf se vyspal. \nEnergie({beta['energie']})"
+    obrazek.source = os.path.join(BASE_DIR, "fish_1.png")
 
 def nakrmit():
-    
-    if beta["hlad"]<= -50 or beta["hlad"] >= 150:
-        beta["životy"] -=20
-        beta["hlad"] -= 10
-        print(f"odebral jsem 20 životů({beta['životy']}), \nodebral jsem 10 hladu{beta['hlad']}")
+    global obrazek
+    if beta['hlad']<= -50 or beta['hlad'] >= 150:
+        beta['životy'] -=20
+        beta['hlad'] -= 10
+        zprava.content = "Adolf je přežraný!"
+       
         
-        
-        ui.notify("Nakrmeno")
-        kontroluj_status()
     else:
         beta["hlad"] -= 10
         if beta["životy"] < 100:
-            beta["životy"] +=1
-    print(f"Adolfův hlad je:{beta["hlad"]}")
+            beta["životy"] +=5
+    
+    obrazek.source = os.path.join(BASE_DIR, "fish_2.png")
     zprava.content = f"Nakrmil jsi adolfa! (hlad: {beta['hlad']})"
+    kontroluj_status()
 
+def voda():
+    zprava.content = "Voda vyměněna!<br>Adolf je šťastnější.."
+    beta['voda'] += 50
+    if beta['voda'] > 120:
+        beta['voda'] =100
+        zprava.content = f"Moc měniš vodu...."
+        beta['životy'] -= 10
+    beta['životy'] +=50
+    if beta['životy'] > 100:
+        beta['životy'] =100
+    beta['nešťastnost'] -= 25
+    if beta['nešťastnost'] <0:
+        beta['nešťastnost'] = 0
+    
+    
 def kontroluj_status():
+    if not beta['žije']:
+        zprava.content = "Resetuji hru, protože Adolf umřel"
+        obrazek.source = os.path.join(BASE_DIR, "fish_5.png")
+        
+        ui.timer(10.0, reset)
+        return
+
+    
     if beta["životy"] <= 0:
-        beta["žije"] == False
-        print("Adolf umřel!")
+        zprava.content = "Zhebl"
+        beta["žije"] = False
+        return
         
-        #ui.shutdown()
-        exit()
+       
+        
+        
+        
     if beta["věk"] > 5:
-        beta["žije"] == False
-        print("Adolf umřel")
+        beta["žije"] = False
         
-        #ui.shutdown()
-        exit()
+        zprava.content = "Adolf umřel..... D:"
+        obrazek.source = os.path.join(BASE_DIR, "fish_5")
+        print("umrel")
+        return
         
+        
+    if beta['nešťastnost'] > 100:
+        beta['životy'] -= 1
+        ui.timer(10.0, kontroluj_status)
+        zprava.content = f"Adolf je smutný..."
+    if beta['energie'] < -50:
+        beta['životy'] -=50
+        ui.timer(25.0,kontroluj_status)
+    
+
 def hladoveni():
     beta["hlad"] += 10
+    
     if beta["hlad"] >= 150:
         beta["životy"] -=20
-        print(f"Adolf má hlad !!!!\nOdebral jsem 20 životů({beta['životy']})")
+        
         zprava.content= f"Adolf má hlad!!! <br>Odebral jsem 20 životů({beta['životy']})"
+        obrazek.source = os.path.join(BASE_DIR, "fish_4.png")
         kontroluj_status()
     if beta["hlad"] >100:
+        
 
-        print(f"Adolf má hlad! - ({beta["hlad"]})")
-        zprava.content = f"Adolf má hlad! - ({beta["hlad"]})"
+        
+        zprava.content = f"Adolf má hlad! - ({beta['hlad']})"
     else:
         zprava.content = f"Adolf tráví své jídlo..."
+def zhorseni_vody():
+    global pozadi
+    
+    beta['voda'] -= 15
+    if beta["voda"] <= -150:
+        beta["životy"] -=20
+        
+        zprava.content= f"Adolf má špatnou vodu!!! <br>Odebral jsem 20 životů({beta['životy']})"
+        obrazek.source = os.path.join(BASE_DIR, "fish_4.png")
+        pozadi.style("background-color: green")
+        kontroluj_status()
+    elif beta["voda"] <20:
+        pozadi.style("background-color: #38B2AC")
+        
+
+        
+        zprava.content = f"Adolf má špatnou vodu! - ({beta['voda']})"
+    
+    else:
+        zprava.content = f"Zhoršuje se voda..."
+        pozadi.style("background-color: skyblue")
 def starnuti():
     beta["věk"] += 1
-    zprava.content = f"Adolf mí narozky! je mu {beta["věk"]}!"
+    zprava.content = f"Adolf mí narozky! je mu {beta['věk']}!"
 
-def vystrihni_obrazek(x, y):
-    x= x*64
-    y= y*64
-    return spritesheet.crop((x, y, x+64, y+64))
+def smutek():
+    beta['nešťastnost'] +=5
+
+
+
 def random_event():
-    zprava.content = f"BLO blo "
+    if beta["žije"] == False: 
+        return
+    else:
+
+        zprava.content = f"BLO blo "
+        obrazek.source = os.path.join(BASE_DIR, "fish_0.png")
 def main():
-    global obrazek, zprava
+    global obrazek, zprava, tlacitka, pozadi
     #
 
-
-    print("Vítej")
-    print("""  
-      /\\
-    _/./
- ,-'    `-:..-'/
-: o )      _  (
-"`-....,--; `-.\\
-    `'
-  """)
-    print("Pro ukončení napišš konec\n")
+    print("Spuštím...")
 
 
     #taky stare
@@ -176,19 +270,29 @@ def main():
         "Nakmit": nakrmit,
         "Hrát": hra, 
         "spát": spánek,
+        "Doplnit vodu": voda, 
         "status": status, 
-        "reset": reset, 
+        "reset hry": reset, 
     }
     ui.timer(3600.0, starnuti)
     ui.timer(60.0, hladoveni)
+    ui.timer(35.0, smutek)
+    ui.timer(42.0, zhorseni_vody)
     ui.timer(25.0, random_event)
-    ui.query("body").style("background-color: skyblue")
-    with ui.element("div").classes("w-full h-screen flex items-center justify-center flex-col flex gap-5 ").style(" width: 100vw; height: 100vh; background-color: skyblue; "):
+    ui.timer(60.0, kontroluj_status)
+    pozadi = ui.query("body")
+    pozadi.style("background-color: skyblue")
+    with ui.element("div").classes("w-full h-screen flex items-center justify-center flex-col flex gap-5 ").style(" width: 100vw; height: 100vh; "):# background-color: skyblue;
         # zprava = ui.label("ahaaaoj")
         ui.label("nadpis").classes("text-4xl")
         
-        print(zprava)
-        obrazek = ui.image(vystrihni_obrazek(2,4)).classes("h-32 w-32")
+        
+        with ui.element("div").classes("h-32 w-32 "):
+            
+            obrazek = ui.image(os.path.join(BASE_DIR, "fish_0.png")).classes("h-32 w-32")
+            
+
+
         with ui.element("div").classes("w-100 h-50 border-2 border-solid border-black grid grid-cols-3 gap-y- gap-x-2 place-items-center"):
             for jmeno, funkce in tlacitka.items():
                 ui.button(jmeno, on_click=funkce).classes("w-30 h-20")
@@ -201,7 +305,7 @@ def main():
     # cas_hladu = dt.datetime.now() + dt.timedelta(seconds=10)
     # cas_stari = dt.datetime.now() + dt.timedelta(minutes=1)
 
-    beta = load_data()
+
     # while True:
     #     print("Looop")
     #     uziv_input = input("\n: ")
@@ -231,10 +335,12 @@ def main():
             
     #     save_data()
     #STARÉ - PRO KOMUNIKACI S TERMINÁLEM
+    beta = load_data()
     save_data()
+    
     ui.run()
     
-        
+    #dadawdawawd
         
 # if __name__ == "__main__":
     
